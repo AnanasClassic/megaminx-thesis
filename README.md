@@ -54,7 +54,7 @@ scripts/12_summarize.sh
 Параметры меняются через переменные окружения:
 
 ```bash
-METRIC=UTM DEVICE=cuda:0 TRAIN_PER_DEPTH=1 VAL_PER_DEPTH=10000 scripts/01_make_datasets.sh
+METRIC=UTM DEVICE=cuda:0 BUCKETS=1-60 TRAIN_PER_DEPTH=1 VAL_PER_DEPTH=1000 scripts/01_make_datasets.sh
 DEVICE=cuda:0 STATE_EPOCHS=1024 STATE_STEPS_PER_EPOCH=512 scripts/02_train_state.sh
 DEVICE=cuda:0 NEIGH_EPOCHS=4096 NEIGH_STEPS_PER_EPOCH=16 scripts/05_train_neighbour.sh
 BEAM_WIDTH=65536 MAX_DEPTH=200 TESTS=100 scripts/07_fixed_beam.sh
@@ -71,7 +71,7 @@ METRIC=FTM scripts/05_train_neighbour.sh
 METRIC=FTM scripts/08_beam_sweep.sh
 ```
 
-`UTM` и `FTM` используют разные validation/test/search датасеты, разные teacher labels для validation и разные `latest_*` чекпоинты. Во время обучения `State Model` и `Neighbour Model` генерируют новые random walks каждую эпоху; сохраненный `state_train.pt` задает только метрику и depth buckets, поэтому `TRAIN_PER_DEPTH=1` достаточно. Длины решений сравниваются только внутри одной метрики ходов.
+`UTM` и `FTM` используют разные validation/test/search датасеты, разные teacher labels для validation и разные `latest_*` чекпоинты. Во время обучения `State Model` и `Neighbour Model` генерируют новые random walks каждую эпоху; сохраненный `state_train.pt` задает только метрику и depth buckets, поэтому `TRAIN_PER_DEPTH=1` достаточно. По умолчанию `BUCKETS=1-60`, так что глубины блуждания `1..60` попадают в train равномерно. Длины решений сравниваются только внутри одной метрики ходов.
 
 ## Что пишется в логи
 

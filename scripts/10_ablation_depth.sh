@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 : "${STATE_CKPT:?set STATE_CKPT or run scripts/02_train_state.sh}"
 : "${NEIGH_CKPT:?set NEIGH_CKPT or run scripts/05_train_neighbour.sh}"
-for D in $(printf '%s' "$BUCKETS" | tr ',' ' '); do
+for D in $(depth_values); do
   "$PYTHON" -m megathesis.run_search \
     --checkpoint "$STATE_CKPT" \
     --data-path "$SEARCH_TEST" \

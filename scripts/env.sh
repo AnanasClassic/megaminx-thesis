@@ -24,5 +24,20 @@ latest_ckpt() {
   local path="checkpoints/latest_${kind}_${METRIC_LC}.txt"
   [[ -f "$path" ]] && cat "$path" || true
 }
+depth_values() {
+  local text="${BUCKETS// /}"
+  local part a b
+  IFS=',' read -ra parts <<< "$text"
+  for part in "${parts[@]}"; do
+    [[ -n "$part" ]] || continue
+    if [[ "$part" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+      a="${BASH_REMATCH[1]}"
+      b="${BASH_REMATCH[2]}"
+      seq "$a" "$b"
+    else
+      printf '%s\n' "$part"
+    fi
+  done
+}
 STATE_CKPT="${STATE_CKPT:-$(latest_ckpt state)}"
 NEIGH_CKPT="${NEIGH_CKPT:-$(latest_ckpt neighbour)}"

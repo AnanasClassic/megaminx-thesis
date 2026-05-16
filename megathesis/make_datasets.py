@@ -8,7 +8,16 @@ from .moves import random_walks
 
 
 def parse_depths(text):
-    return [int(x) for x in str(text).replace(" ", "").split(",") if x]
+    depths = []
+    for part in str(text).replace(" ", "").split(","):
+        if not part:
+            continue
+        if "-" in part:
+            a, b = [int(x) for x in part.split("-", 1)]
+            depths.extend(range(a, b + 1))
+        else:
+            depths.append(int(part))
+    return depths
 
 
 def make_split(target, moves, inverse, depths, per_depth, seed, device):
@@ -49,10 +58,10 @@ def main():
     parser.add_argument("--group-id", type=int, default=900)
     parser.add_argument("--target-id", type=int, default=0)
     parser.add_argument("--metric", choices=("UTM", "FTM"), default="UTM")
-    parser.add_argument("--buckets", default="5,10,15,20,30,40")
-    parser.add_argument("--train-per-depth", type=int, default=20000)
-    parser.add_argument("--val-per-depth", type=int, default=3000)
-    parser.add_argument("--test-per-depth", type=int, default=3000)
+    parser.add_argument("--buckets", default="1-60")
+    parser.add_argument("--train-per-depth", type=int, default=1)
+    parser.add_argument("--val-per-depth", type=int, default=1000)
+    parser.add_argument("--test-per-depth", type=int, default=300)
     parser.add_argument("--search-per-depth", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cpu")
