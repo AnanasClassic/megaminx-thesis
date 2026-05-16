@@ -34,7 +34,7 @@ class BeamSolver:
         self.no_reverse = bool(no_reverse)
         gen = torch.Generator(device="cpu")
         gen.manual_seed(0)
-        self.hash_vec = torch.randint(1, 2**31 - 1, (target.numel(),), generator=gen, dtype=torch.long).to(device)
+        self.hash_vec = torch.randint(0, int(1e15), (target.numel(),), generator=gen, dtype=torch.int64).to(device)
         self.flops_per_input = forward_flops(model)
 
     def hash_states(self, states):
