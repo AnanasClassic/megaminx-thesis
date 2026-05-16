@@ -7,7 +7,7 @@ source "$(dirname "$0")/env.sh"
   --epochs "$STATE_EPOCHS" \
   --steps-per-epoch "$STATE_STEPS_PER_EPOCH" \
   --batch-size "$STATE_BATCH" \
-  --depths "$DEPTHS" \
+  --depths "$STATE_DEPTHS" \
   --lr "$STATE_LR" \
   --seed "$SEED" \
   --device "$DEVICE"
