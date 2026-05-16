@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+checkpoints/*.pt
+checkpoints/latest_*.txt
+datasets/*/*.pt
+logs/*.csv
+logs/*.json
+logs/*.png
+!datasets/superflip.pt
+!data/targets/p900-t000.pt
+!data/generators/p900.json
