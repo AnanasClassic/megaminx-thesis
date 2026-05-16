@@ -57,7 +57,7 @@ scripts/12_summarize.sh
 METRIC=UTM DEVICE=cuda:0 TRAIN_PER_DEPTH=1 VAL_PER_DEPTH=10000 scripts/01_make_datasets.sh
 DEVICE=cuda:0 STATE_EPOCHS=1024 STATE_STEPS_PER_EPOCH=512 scripts/02_train_state.sh
 DEVICE=cuda:0 NEIGH_EPOCHS=4096 NEIGH_STEPS_PER_EPOCH=16 scripts/05_train_neighbour.sh
-BEAM_WIDTH=256 MAX_DEPTH=120 TESTS=100 scripts/07_fixed_beam.sh
+BEAM_WIDTH=65536 MAX_DEPTH=200 TESTS=100 scripts/07_fixed_beam.sh
 BEAM_WIDTHS="4096 8192 16384 32768 65536 131072 262144" TESTS=100 scripts/08_beam_sweep.sh
 ```
 
