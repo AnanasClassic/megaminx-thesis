@@ -10,5 +10,7 @@ source "$(dirname "$0")/env.sh"
   --steps-per-epoch "$NEIGH_STEPS_PER_EPOCH" \
   --teacher-batch-size "$TEACHER_BATCH" \
   --batch-size "$NEIGH_BATCH" \
+  --depths "$DEPTHS" \
+  --lr "$NEIGH_LR" \
   --seed "$SEED" \
   --device "$DEVICE"

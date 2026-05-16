@@ -78,17 +78,18 @@ def random_walks(target, moves, inverse, depths, generator):
     last = torch.full((depths.numel(),), -1, dtype=torch.long, device=device)
     n_moves = moves.size(0)
     for step in range(int(depths.max().item()) if depths.numel() else 0):
-        active = depths > step
-        if not active.any():
+        active = torch.nonzero(depths > step, as_tuple=False).view(-1)
+        if active.numel() == 0:
             break
-        nxt = torch.randint(n_moves, (depths.numel(),), generator=generator, device=device)
-        invalid = active & (last >= 0) & (nxt == inverse[last.clamp_min(0)])
+        prev = last.index_select(0, active)
+        nxt = torch.randint(n_moves, (active.numel(),), generator=generator, device=device)
+        valid = prev >= 0
+        invalid = valid & (nxt == inverse[prev.clamp_min(0)])
         while invalid.any():
             nxt[invalid] = torch.randint(n_moves, (int(invalid.sum().item()),), generator=generator, device=device)
-            invalid = active & (last >= 0) & (nxt == inverse[last.clamp_min(0)])
-        moved = apply_moves(states, moves, nxt)
-        states = torch.where(active.unsqueeze(1), moved, states)
-        last = torch.where(active, nxt, last)
+            invalid = valid & (nxt == inverse[prev.clamp_min(0)])
+        states[active] = apply_moves(states.index_select(0, active), moves, nxt)
+        last[active] = nxt
     return states, last
 
 

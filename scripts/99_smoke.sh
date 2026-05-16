@@ -6,7 +6,7 @@ METRIC_LC="${METRIC,,}"
 DEVICE="${SMOKE_DEVICE:-cpu}"
 "$PYTHON" -m megathesis.make_datasets \
   --metric "$METRIC" \
-  --buckets "1,2" \
+  --depths "1,2" \
   --train-per-depth 16 \
   --val-per-depth 8 \
   --test-per-depth 8 \

@@ -26,6 +26,19 @@ def batches(size, batch_size, shuffle, device, seed):
         yield idx[start:start + batch_size]
 
 
+def parse_depths(text):
+    depths = []
+    for part in str(text).replace(" ", "").split(","):
+        if not part:
+            continue
+        if "-" in part:
+            a, b = [int(x) for x in part.split("-", 1)]
+            depths.extend(range(a, b + 1))
+        else:
+            depths.append(int(part))
+    return depths
+
+
 def model_args(model):
     return {
         "state_size": model.state_size,

@@ -9,7 +9,7 @@ from .io import ROOT, load_group, resolve_device, run_id as make_run_id
 from .metrics import regression
 from .model import Net
 from .moves import random_walks
-from .train_utils import append_csv, batches, save_checkpoint
+from .train_utils import append_csv, batches, parse_depths, save_checkpoint
 
 
 def eval_model(model, states, depths, batch_size, device):
@@ -21,9 +21,10 @@ def eval_model(model, states, depths, batch_size, device):
     return regression(torch.cat(pred), depths.float())
 
 
-def sample_depths(depth_values, count, generator, device):
-    idx = torch.randint(len(depth_values), (count,), generator=generator, device=device)
-    return depth_values.index_select(0, idx)
+def epoch_depths(depth_values, count, generator):
+    per_depth = max(count // depth_values.numel(), 1)
+    y = depth_values.repeat_interleave(per_depth)
+    return y[torch.randperm(y.numel(), generator=generator, device=y.device)]
 
 
 def main():
@@ -31,10 +32,12 @@ def main():
     parser.add_argument("--train-path", default="")
     parser.add_argument("--val-path", default="")
     parser.add_argument("--epochs", type=int, default=64)
-    parser.add_argument("--steps-per-epoch", type=int, default=512)
-    parser.add_argument("--batch-size", type=int, default=4096)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--weight-decay", type=float, default=1e-2)
+    parser.add_argument("--steps-per-epoch", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=32768)
+    parser.add_argument("--depths", default="")
+    parser.add_argument("--buckets", default="")
+    parser.add_argument("--lr", type=float, default=2e-5)
+    parser.add_argument("--weight-decay", type=float, default=0.0)
     parser.add_argument("--hd1", type=int, default=1536)
     parser.add_argument("--hd2", type=int, default=512)
     parser.add_argument("--nrd", type=int, default=2)
@@ -45,6 +48,9 @@ def main():
     args = parser.parse_args()
 
     device = resolve_device(args.device)
+    if device.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
     torch.manual_seed(args.seed)
     train_path = Path(args.train_path) if args.train_path else ROOT / "datasets" / "utm" / "state_train.pt"
     val_path = Path(args.val_path) if args.val_path else train_path.with_name("state_val.pt")
@@ -55,7 +61,7 @@ def main():
     num_classes = int(target.max().item() - min(0, int(target.min().item())) + 1)
     z_add = -int(target.min().item()) if int(target.min().item()) < 0 else 0
     model = Net(target.numel(), num_classes, 1, args.hd1, args.hd2, args.nrd, args.dropout, z_add).to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     run_id = make_run_id()
     prefix = f"{args.run_name}_{metric.lower()}_{run_id}"
     log_path = ROOT / "logs" / f"{prefix}.csv"
@@ -63,15 +69,18 @@ def main():
     best_path = ROOT / "checkpoints" / f"{prefix}_best.pt"
     final_path = ROOT / "checkpoints" / f"{prefix}_final.pt"
 
-    depth_values = torch.unique(train["depths"].long()).to(device)
+    depth_text = args.depths or args.buckets
+    depth_values = torch.tensor(parse_depths(depth_text), dtype=torch.long, device=device) if depth_text else torch.unique(train["depths"].long()).to(device)
+    print({"train_depth_min": int(depth_values.min().item()), "train_depth_max": int(depth_values.max().item()), "train_depth_count": int(depth_values.numel())})
     rng = torch.Generator(device=device)
     rng.manual_seed(args.seed)
     for epoch in range(1, args.epochs + 1):
         model.train()
         total = 0.0
         seen = 0
-        for _ in range(args.steps_per_epoch):
-            y = sample_depths(depth_values, args.batch_size, rng, device).float()
+        y_epoch = epoch_depths(depth_values, args.steps_per_epoch * args.batch_size, rng)
+        for start in range(0, y_epoch.numel(), args.batch_size):
+            y = y_epoch[start:start + args.batch_size].float()
             x, _ = random_walks(target, moves, inverse, y.long(), rng)
             pred = model(x)
             loss = F.mse_loss(pred.float(), y.float())

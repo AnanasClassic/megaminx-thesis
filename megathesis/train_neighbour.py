@@ -9,7 +9,7 @@ from .io import ROOT, build_model_from_checkpoint, load_group, resolve_device, r
 from .metrics import ranking, regression
 from .model import Net, batch_predict
 from .moves import all_children, random_walks
-from .train_utils import append_csv, batches, save_checkpoint
+from .train_utils import append_csv, batches, parse_depths, save_checkpoint
 
 
 def eval_model(model, states, labels, batch_size, device):
@@ -41,10 +41,12 @@ def main():
     parser.add_argument("--val-path", default="")
     parser.add_argument("--teacher", required=True)
     parser.add_argument("--epochs", type=int, default=64)
-    parser.add_argument("--steps-per-epoch", type=int, default=64)
-    parser.add_argument("--batch-size", type=int, default=2048)
+    parser.add_argument("--steps-per-epoch", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=8192)
+    parser.add_argument("--depths", default="")
+    parser.add_argument("--buckets", default="")
     parser.add_argument("--teacher-batch-size", type=int, default=65536)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--weight-decay", type=float, default=1e-2)
     parser.add_argument("--hd1", type=int, default=1536)
     parser.add_argument("--hd2", type=int, default=512)
@@ -56,6 +58,9 @@ def main():
     args = parser.parse_args()
 
     device = resolve_device(args.device)
+    if device.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
     torch.manual_seed(args.seed)
     state_path = Path(args.state_path) if args.state_path else ROOT / "datasets" / "utm" / "state_train.pt"
     val_path = Path(args.val_path) if args.val_path else state_path.with_name("neigh_val.pt")
@@ -79,7 +84,9 @@ def main():
     best_path = ROOT / "checkpoints" / f"{prefix}_best.pt"
     final_path = ROOT / "checkpoints" / f"{prefix}_final.pt"
 
-    depth_values = torch.unique(state_data["depths"].long()).to(device)
+    depth_text = args.depths or args.buckets
+    depth_values = torch.tensor(parse_depths(depth_text), dtype=torch.long, device=device) if depth_text else torch.unique(state_data["depths"].long()).to(device)
+    print({"train_depth_min": int(depth_values.min().item()), "train_depth_max": int(depth_values.max().item()), "train_depth_count": int(depth_values.numel())})
     rng = torch.Generator(device=device)
     rng.manual_seed(args.seed)
     for epoch in range(1, args.epochs + 1):

@@ -13,6 +13,7 @@ fi
 PYTHON="${PYTHON:-python3}"
 METRIC="${METRIC:-UTM}"
 METRIC_LC="$(printf '%s' "$METRIC" | tr '[:upper:]' '[:lower:]')"
+DEPTHS="${DEPTHS:-${BUCKETS:-1-60}}"
 DATA_DIR="datasets/${METRIC_LC}"
 STATE_TRAIN="${STATE_TRAIN:-${DATA_DIR}/state_train.pt}"
 STATE_VAL="${STATE_VAL:-${DATA_DIR}/state_val.pt}"
@@ -25,7 +26,7 @@ latest_ckpt() {
   [[ -f "$path" ]] && cat "$path" || true
 }
 depth_values() {
-  local text="${BUCKETS// /}"
+  local text="${DEPTHS// /}"
   local part a b
   IFS=',' read -ra parts <<< "$text"
   for part in "${parts[@]}"; do

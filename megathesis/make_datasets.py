@@ -5,19 +5,7 @@ import torch
 
 from .io import ROOT, load_group, resolve_device
 from .moves import random_walks
-
-
-def parse_depths(text):
-    depths = []
-    for part in str(text).replace(" ", "").split(","):
-        if not part:
-            continue
-        if "-" in part:
-            a, b = [int(x) for x in part.split("-", 1)]
-            depths.extend(range(a, b + 1))
-        else:
-            depths.append(int(part))
-    return depths
+from .train_utils import parse_depths
 
 
 def make_split(target, moves, inverse, depths, per_depth, seed, device):
@@ -58,7 +46,8 @@ def main():
     parser.add_argument("--group-id", type=int, default=900)
     parser.add_argument("--target-id", type=int, default=0)
     parser.add_argument("--metric", choices=("UTM", "FTM"), default="UTM")
-    parser.add_argument("--buckets", default="1-60")
+    parser.add_argument("--depths", default="")
+    parser.add_argument("--buckets", default="")
     parser.add_argument("--train-per-depth", type=int, default=1)
     parser.add_argument("--val-per-depth", type=int, default=1000)
     parser.add_argument("--test-per-depth", type=int, default=300)
@@ -70,7 +59,7 @@ def main():
 
     device = resolve_device(args.device)
     moves, names, inverse, target = load_group(args.group_id, args.target_id, args.metric, device)
-    depths = parse_depths(args.buckets)
+    depths = parse_depths(args.depths or args.buckets or "1-60")
     out = Path(args.out_dir) if args.out_dir else ROOT / "datasets" / args.metric.lower()
 
     specs = [
