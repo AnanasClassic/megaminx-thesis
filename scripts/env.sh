@@ -16,6 +16,7 @@ METRIC_LC="$(printf '%s' "$METRIC" | tr '[:upper:]' '[:lower:]')"
 DEPTHS="${DEPTHS:-${BUCKETS:-1-65}}"
 STATE_DEPTHS="${STATE_DEPTHS:-$DEPTHS}"
 NEIGH_DEPTHS="${NEIGH_DEPTHS:-$DEPTHS}"
+SEARCH_DEPTHS="${SEARCH_DEPTHS:-1000}"
 DATA_DIR="datasets/${METRIC_LC}"
 STATE_TRAIN="${STATE_TRAIN:-${DATA_DIR}/state_train.pt}"
 STATE_VAL="${STATE_VAL:-${DATA_DIR}/state_val.pt}"
@@ -29,6 +30,21 @@ latest_ckpt() {
 }
 depth_values() {
   local text="${DEPTHS// /}"
+  local part a b
+  IFS=',' read -ra parts <<< "$text"
+  for part in "${parts[@]}"; do
+    [[ -n "$part" ]] || continue
+    if [[ "$part" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+      a="${BASH_REMATCH[1]}"
+      b="${BASH_REMATCH[2]}"
+      seq "$a" "$b"
+    else
+      printf '%s\n' "$part"
+    fi
+  done
+}
+search_depth_values() {
+  local text="${SEARCH_DEPTHS// /}"
   local part a b
   IFS=',' read -ra parts <<< "$text"
   for part in "${parts[@]}"; do

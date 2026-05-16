@@ -48,6 +48,7 @@ def main():
     parser.add_argument("--metric", choices=("UTM", "FTM"), default="UTM")
     parser.add_argument("--depths", default="")
     parser.add_argument("--buckets", default="")
+    parser.add_argument("--search-depths", default="")
     parser.add_argument("--train-per-depth", type=int, default=1)
     parser.add_argument("--val-per-depth", type=int, default=1000)
     parser.add_argument("--test-per-depth", type=int, default=300)
@@ -59,17 +60,18 @@ def main():
 
     device = resolve_device(args.device)
     moves, names, inverse, target = load_group(args.group_id, args.target_id, args.metric, device)
-    depths = parse_depths(args.depths or args.buckets or "1-60")
+    depths = parse_depths(args.depths or args.buckets or "1-65")
+    search_depths = parse_depths(args.search_depths or args.depths or args.buckets or "1-65")
     out = Path(args.out_dir) if args.out_dir else ROOT / "datasets" / args.metric.lower()
 
     specs = [
-        ("state_train.pt", args.train_per_depth, args.seed + 11),
-        ("state_val.pt", args.val_per_depth, args.seed + 23),
-        ("state_test.pt", args.test_per_depth, args.seed + 37),
-        ("search_test.pt", args.search_per_depth, args.seed + 51),
+        ("state_train.pt", depths, args.train_per_depth, args.seed + 11),
+        ("state_val.pt", depths, args.val_per_depth, args.seed + 23),
+        ("state_test.pt", depths, args.test_per_depth, args.seed + 37),
+        ("search_test.pt", search_depths, args.search_per_depth, args.seed + 51),
     ]
-    for name, count, seed in specs:
-        save_split(out / name, make_split(target, moves, inverse, depths, count, seed, device), args, names)
+    for name, split_depths, count, seed in specs:
+        save_split(out / name, make_split(target, moves, inverse, split_depths, count, seed, device), args, names)
 
 
 if __name__ == "__main__":

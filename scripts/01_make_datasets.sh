@@ -4,6 +4,7 @@ source "$(dirname "$0")/env.sh"
 "$PYTHON" -m megathesis.make_datasets \
   --metric "$METRIC" \
   --depths "$DEPTHS" \
+  --search-depths "$SEARCH_DEPTHS" \
   --train-per-depth "$TRAIN_PER_DEPTH" \
   --val-per-depth "$VAL_PER_DEPTH" \
   --test-per-depth "$TEST_PER_DEPTH" \
